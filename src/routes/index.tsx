@@ -153,12 +153,18 @@ function Index() {
           <a href="#about" className="hover:text-white">About</a>
         </nav>
         <div className="flex items-center gap-2">
-          <button className="hidden rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-slate-500 sm:inline-block">
+          <Link
+            to="/auth"
+            className="hidden rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-slate-500 sm:inline-block"
+          >
             Sign in
-          </button>
-          <button className="rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400">
+          </Link>
+          <Link
+            to="/auth"
+            className="rounded-md bg-indigo-500 px-3 py-1.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400"
+          >
             Get invite
-          </button>
+          </Link>
         </div>
       </header>
 
