@@ -6,7 +6,7 @@ import type { Database } from "@/integrations/supabase/types";
 type Invite = Database["public"]["Tables"]["invitation_codes"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/admin-dashboard")({
-  head: () => ({ meta: [{ title: "Admin — Kiosk" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Admin — InkAlley" }, { name: "robots", content: "noindex" }] }),
   component: AdminPage,
 });
 
@@ -180,7 +180,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <button onClick={() => navigate({ to: "/" })} className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-md bg-indigo-500 text-sm font-black text-white">K</div>
-          <span className="text-lg font-semibold">Kiosk</span>
+          <span className="text-lg font-semibold">InkAlley</span>
         </button>
         <button
           onClick={async () => {

@@ -5,12 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/shop/$username")({
   head: ({ params }) => ({
     meta: [
-      { title: `@${params.username} — Kiosk` },
+      { title: `@${params.username} — InkAlley` },
       {
         name: "description",
-        content: `Shop merch from @${params.username} on Kiosk — acrylic standees, laser tickets, die-cut stickers.`,
+        content: `Shop merch from @${params.username} on InkAlley — acrylic standees, laser tickets, die-cut stickers.`,
       },
-      { property: "og:title", content: `@${params.username} — Kiosk` },
+      { property: "og:title", content: `@${params.username} — InkAlley` },
       {
         property: "og:description",
         content: `Shop merch from @${params.username}.`,
@@ -117,7 +117,7 @@ function ShopPage() {
             <div className="grid h-7 w-7 place-items-center rounded-md bg-indigo-500 text-xs font-black text-white">
               K
             </div>
-            <span className="font-semibold tracking-tight">Kiosk</span>
+            <span className="font-semibold tracking-tight">InkAlley</span>
           </Link>
           <Link
             to="/"

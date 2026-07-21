@@ -5,13 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Kiosk — Invite-only merch from indie artists" },
+      { title: "InkAlley — Invite-only merch from indie artists" },
       {
         name: "description",
         content:
           "A directory of verified indie artists making acrylic standees, laser tickets, and die-cut stickers. Browse artists and shop their drops.",
       },
-      { property: "og:title", content: "Kiosk — Invite-only merch from indie artists" },
+      { property: "og:title", content: "InkAlley — Invite-only merch from indie artists" },
       {
         property: "og:description",
         content: "Browse verified indie artists and their premium merch drops.",
@@ -77,7 +77,7 @@ function Index() {
           <div className="grid h-8 w-8 place-items-center rounded-md bg-indigo-500 text-sm font-black text-white shadow-lg shadow-indigo-500/40">
             K
           </div>
-          <span className="text-lg font-semibold tracking-tight">Kiosk</span>
+          <span className="text-lg font-semibold tracking-tight">InkAlley</span>
           <span className="ml-2 hidden rounded-full border border-indigo-400/30 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-indigo-300 sm:inline">
             Invite-only
           </span>
@@ -112,7 +112,7 @@ function Index() {
             </span>
           </h1>
           <p className="mt-5 max-w-xl text-base text-slate-400 sm:text-lg">
-            Kiosk is a directory of verified indie artists making small runs of
+            InkAlley is a directory of verified indie artists making small runs of
             acrylic standees, laser tickets, and die-cut stickers. Pick an
             artist, walk into their shop.
           </p>
@@ -146,7 +146,7 @@ function Index() {
       <footer className="relative z-10 border-t border-slate-900">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-6 py-10 sm:flex-row sm:items-center">
           <div className="text-sm text-slate-500">
-            © {new Date().getFullYear()} Kiosk. Invite-only marketplace for indie artists.
+            © {new Date().getFullYear()} InkAlley. Invite-only marketplace for indie artists.
           </div>
           <div className="flex gap-6 text-sm text-slate-400">
             <a href="#" className="hover:text-white">Terms</a>

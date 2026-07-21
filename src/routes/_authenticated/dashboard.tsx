@@ -8,7 +8,7 @@ type BaseProduct = Database["public"]["Tables"]["base_products"]["Row"];
 type MerchItem = Database["public"]["Tables"]["merchandise_items"]["Row"];
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Kiosk" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — InkAlley" }] }),
   component: Dashboard,
 });
 
@@ -51,7 +51,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <button onClick={() => navigate({ to: "/" })} className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-md bg-indigo-500 text-sm font-black text-white">K</div>
-          <span className="text-lg font-semibold">Kiosk</span>
+          <span className="text-lg font-semibold">InkAlley</span>
         </button>
         <button
           onClick={async () => {
@@ -128,7 +128,7 @@ function AccessDenied({ onUnlocked }: { onUnlocked: () => void }) {
             🔒
           </div>
           <h1 className="mt-5 text-2xl font-semibold tracking-tight">
-            Kiosk is invite-only for artists
+            InkAlley is invite-only for artists
           </h1>
           <p className="mt-2 text-sm text-slate-400">
             Your buyer account is active — you can browse and purchase merch. To open
