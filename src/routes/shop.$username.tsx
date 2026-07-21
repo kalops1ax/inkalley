@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Check, ExternalLink, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/shop/$username")({
   head: ({ params }) => ({
@@ -21,15 +23,8 @@ export const Route = createFileRoute("/shop/$username")({
   notFoundComponent: ShopNotFound,
 });
 
-type Profile = {
-  id: string;
-  username: string;
-  bio: string | null;
-  avatar_url: string | null;
-  portfolio_link: string | null;
-  role: string;
-  is_verified: boolean;
-};
+type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type SocialLinks = Record<string, string>;
 
 type Merch = {
   id: string;
@@ -41,18 +36,26 @@ type Merch = {
   artist_id: string;
 };
 
+const SOCIAL_ICONS: { key: string; label: string }[] = [
+  { key: "twitter", label: "Twitter / X" },
+  { key: "instagram", label: "Instagram" },
+  { key: "tiktok", label: "TikTok" },
+  { key: "website", label: "Website" },
+];
+
 function ShopPage() {
   const { username } = Route.useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null | "missing">(null);
   const [merch, setMerch] = useState<Merch[]>([]);
   const [viewerId, setViewerId] = useState<string | null>(null);
+  const [checkoutMsg, setCheckoutMsg] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data: p } = await supabase
         .from("profiles")
-        .select("id, username, bio, avatar_url, portfolio_link, role, is_verified")
+        .select("*")
         .eq("username", username)
         .maybeSingle();
       if (!p) {
@@ -79,6 +82,8 @@ function ShopPage() {
   if (profile === "missing") return <ShopNotFound />;
 
   const isOwner = profile && viewerId === profile.id;
+  const socials = (profile?.social_links ?? {}) as SocialLinks;
+  const activeSocials = SOCIAL_ICONS.filter((s) => socials[s.key]);
 
   async function toggleActive(item: Merch) {
     if (!isOwner) return;
@@ -102,26 +107,26 @@ function ShopPage() {
       navigate({ to: "/auth" });
       return;
     }
-    alert(
+    setCheckoutMsg(
       `Checkout for "${item.title}" ($${Number(item.retail_price_usd).toFixed(
         2,
-      )}) — Stripe + Gelato fulfillment is being connected. This shop is browseable now; buying goes live once payments are activated.`,
+      )}) — Stripe secure checkout is being activated. This shop is fully browseable; purchasing goes live the moment payments are connected.`,
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased">
-      <header className="border-b border-slate-900">
+      <header className="sticky top-0 z-20 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="grid h-7 w-7 place-items-center rounded-md bg-indigo-500 text-xs font-black text-white">
+            <div className="grid h-7 w-7 place-items-center rounded-md bg-indigo-500 text-xs font-black text-white shadow-lg shadow-indigo-500/40">
               IA
             </div>
             <span className="font-semibold tracking-tight">InkAlley</span>
           </Link>
           <Link
             to="/"
-            className="rounded-md border border-slate-800 px-3 py-1.5 text-sm text-slate-300 hover:border-slate-600"
+            className="rounded-md border border-slate-800 px-3 py-1.5 text-sm text-slate-300 transition hover:border-slate-600 hover:text-white"
           >
             ← All artists
           </Link>
@@ -132,73 +137,117 @@ function ShopPage() {
         <div className="mx-auto max-w-6xl px-6 py-16 text-slate-500">Loading shop…</div>
       ) : (
         <>
-          <section className="border-b border-slate-900 bg-gradient-to-b from-indigo-950/40 to-transparent">
-            <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12 sm:flex-row sm:items-center">
-              <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-3xl font-bold text-white shadow-xl shadow-indigo-900/40">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  profile.username[0]?.toUpperCase()
-                )}
+          <section className="relative overflow-hidden border-b border-slate-900">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(50% 80% at 20% 0%,rgba(99,102,241,0.25),transparent 60%), radial-gradient(40% 60% at 90% 10%,rgba(217,70,239,0.12),transparent 60%)",
+              }}
+            />
+            <div className="relative mx-auto flex max-w-6xl flex-col gap-8 px-6 py-12 sm:flex-row sm:items-start sm:py-16">
+              <div className="flex flex-col items-center sm:items-start">
+                <div className="grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-4xl font-bold text-white shadow-2xl shadow-indigo-900/40 ring-1 ring-white/10 sm:h-32 sm:w-32">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    profile.username[0]?.toUpperCase()
+                  )}
+                </div>
               </div>
+
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-3xl font-semibold tracking-tight text-white">
+                  <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                     @{profile.username}
                   </h1>
                   {profile.is_verified && (
-                    <span className="rounded-full border border-indigo-400/40 bg-indigo-500/10 px-2 py-0.5 text-xs text-indigo-300">
-                      ✓ Verified artist
+                    <span className="inline-flex items-center gap-1 rounded-full border border-indigo-400/40 bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-300">
+                      <Check className="h-3 w-3" />
+                      Verified artist
                     </span>
                   )}
                   {isOwner && (
-                    <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-300">
+                    <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-300">
                       This is your shop
                     </span>
                   )}
                 </div>
+
                 {profile.bio && (
-                  <p className="mt-2 max-w-2xl text-slate-300">{profile.bio}</p>
+                  <p className="mt-3 max-w-2xl text-base leading-relaxed text-slate-300">
+                    {profile.bio}
+                  </p>
                 )}
-                {profile.portfolio_link && (
-                  <a
-                    href={profile.portfolio_link}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="mt-3 inline-block text-sm text-indigo-300 hover:text-indigo-200"
-                  >
-                    {profile.portfolio_link} ↗
-                  </a>
+
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  {profile.portfolio_link && (
+                    <a
+                      href={profile.portfolio_link}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-sm text-slate-200 transition hover:border-indigo-400/50 hover:text-white"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Portfolio
+                    </a>
+                  )}
+                  {activeSocials.map((s) => (
+                    <a
+                      key={s.key}
+                      href={socials[s.key]}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-800 bg-slate-900/60 px-3 py-1.5 text-sm text-slate-200 transition hover:border-indigo-400/50 hover:text-white"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {s.label}
+                    </a>
+                  ))}
+                </div>
+
+                {isOwner && (
+                  <div className="mt-6">
+                    <Link
+                      to="/dashboard"
+                      className="inline-flex items-center gap-2 rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400"
+                    >
+                      + Manage merch
+                    </Link>
+                  </div>
                 )}
               </div>
-              {isOwner && (
-                <Link
-                  to="/dashboard"
-                  className="shrink-0 rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-400"
-                >
-                  + Manage merch
-                </Link>
-              )}
             </div>
           </section>
 
           <section className="mx-auto max-w-6xl px-6 py-12">
-            <h2 className="mb-6 text-xl font-semibold tracking-tight">
-              {isOwner ? "Your active drops" : "Drops"}
-            </h2>
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-xl font-semibold tracking-tight">
+                {isOwner ? "Your active drops" : "Drops"}
+              </h2>
+              {merch.length > 0 && (
+                <span className="text-sm text-slate-500">
+                  {merch.length} {merch.length === 1 ? "item" : "items"}
+                </span>
+              )}
+            </div>
 
             {merch.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-10 text-center text-slate-500">
-                {isOwner
-                  ? "You haven't published any merch yet. Head to your dashboard to create your first drop."
-                  : "This artist hasn't dropped anything yet. Check back soon."}
+              <div className="rounded-2xl border border-dashed border-slate-800 bg-slate-900/40 p-12 text-center">
+                <ShoppingBag className="mx-auto h-10 w-10 text-slate-700" />
+                <p className="mt-4 text-slate-500">
+                  {isOwner
+                    ? "You haven't published any merch yet. Head to your dashboard to create your first drop."
+                    : "This artist hasn't dropped anything yet. Check back soon."}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {merch.map((m) => (
                   <div
                     key={m.id}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60"
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 transition hover:-translate-y-0.5 hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-900/30"
                   >
                     <div
                       className="aspect-square overflow-hidden bg-slate-950"
@@ -211,7 +260,7 @@ function ShopPage() {
                         src={m.design_url}
                         alt={m.title}
                         loading="lazy"
-                        className="h-full w-full object-cover transition group-hover:scale-105"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
                         }}
@@ -219,7 +268,7 @@ function ShopPage() {
                     </div>
                     <div className="flex flex-1 flex-col gap-3 p-5">
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-semibold text-white">{m.title}</h3>
+                        <h3 className="font-semibold leading-snug text-white">{m.title}</h3>
                         <span className="shrink-0 rounded-md bg-indigo-500/10 px-2 py-1 text-sm font-semibold text-indigo-300">
                           ${Number(m.retail_price_usd).toFixed(2)}
                         </span>
@@ -227,17 +276,17 @@ function ShopPage() {
                       {m.description && (
                         <p className="line-clamp-2 text-sm text-slate-400">{m.description}</p>
                       )}
-                      <div className="mt-auto flex gap-2">
+                      <div className="mt-auto flex gap-2 pt-1">
                         <button
                           onClick={() => buy(m)}
-                          className="flex-1 rounded-md bg-indigo-500 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+                          className="flex-1 rounded-md bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
                         >
                           Buy ${Number(m.retail_price_usd).toFixed(2)}
                         </button>
                         {isOwner && (
                           <button
                             onClick={() => toggleActive(m)}
-                            className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:border-rose-500/60 hover:text-rose-300"
+                            className="rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-300 transition hover:border-rose-500/60 hover:text-rose-300"
                             title="Deactivate (hide from shop)"
                           >
                             Hide
@@ -252,6 +301,33 @@ function ShopPage() {
           </section>
         </>
       )}
+
+      {checkoutMsg && (
+        <CheckoutModal message={checkoutMsg} onClose={() => setCheckoutMsg(null)} />
+      )}
+    </div>
+  );
+}
+
+function CheckoutModal({ message, onClose }: { message: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-white">Almost ready</h3>
+        <p className="mt-2 text-sm leading-relaxed text-slate-400">{message}</p>
+        <button
+          onClick={onClose}
+          className="mt-5 w-full rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
+        >
+          Got it
+        </button>
+      </div>
     </div>
   );
 }
@@ -260,14 +336,16 @@ function ShopNotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-200">
       <div className="max-w-md text-center">
-        <div className="text-6xl">🎨</div>
-        <h1 className="mt-4 text-2xl font-semibold">Shop not found</h1>
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-slate-800 bg-slate-900/60">
+          <ShoppingBag className="h-8 w-8 text-slate-600" />
+        </div>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight">Shop not found</h1>
         <p className="mt-2 text-slate-400">
           No artist matches this username. They might not be verified yet.
         </p>
         <Link
           to="/"
-          className="mt-6 inline-block rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400"
+          className="mt-6 inline-block rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400"
         >
           Browse all artists
         </Link>

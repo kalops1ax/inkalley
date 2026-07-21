@@ -231,6 +231,7 @@ export type Database = {
           is_verified: boolean
           portfolio_link: string | null
           role: string
+          social_links: Json | null
           username: string
         }
         Insert: {
@@ -242,6 +243,7 @@ export type Database = {
           is_verified?: boolean
           portfolio_link?: string | null
           role?: string
+          social_links?: Json | null
           username: string
         }
         Update: {
@@ -253,6 +255,7 @@ export type Database = {
           is_verified?: boolean
           portfolio_link?: string | null
           role?: string
+          social_links?: Json | null
           username?: string
         }
         Relationships: []
