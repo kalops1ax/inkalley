@@ -77,14 +77,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Kiosk — Invite-only merch marketplace" },
+      {
+        name: "description",
+        content:
+          "A curated marketplace of acrylic standees, laser tickets, and die-cut stickers from verified independent artists.",
+      },
+      { name: "author", content: "Kiosk" },
+      { property: "og:title", content: "Kiosk — Invite-only merch marketplace" },
+      {
+        property: "og:description",
+        content: "Premium merch drops from verified indie artists.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
