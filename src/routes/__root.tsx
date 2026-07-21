@@ -77,14 +77,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Kiosk — Invite-only merch marketplace" },
+      { title: "InkAlley — Invite-only merch marketplace" },
       {
         name: "description",
         content:
           "A curated marketplace of acrylic standees, laser tickets, and die-cut stickers from verified independent artists.",
       },
-      { name: "author", content: "Kiosk" },
-      { property: "og:title", content: "Kiosk — Invite-only merch marketplace" },
+      { name: "author", content: "InkAlley" },
+      { property: "og:title", content: "InkAlley — Invite-only merch marketplace" },
       {
         property: "og:description",
         content: "Premium merch drops from verified indie artists.",

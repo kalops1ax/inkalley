@@ -119,6 +119,108 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          amount_usd: number
+          artist_id: string
+          base_product_name: string
+          buyer_email: string
+          buyer_id: string | null
+          created_at: string
+          currency: string
+          fulfillment_error: string | null
+          fulfillment_status: string
+          gelato_order_id: string | null
+          gelato_response: Json | null
+          id: string
+          merchandise_item_id: string
+          payment_status: string
+          print_file_url: string
+          quantity: number
+          ship_address_line1: string | null
+          ship_address_line2: string | null
+          ship_city: string | null
+          ship_country: string | null
+          ship_name: string | null
+          ship_postal_code: string | null
+          ship_state: string | null
+          stripe_payment_intent_id: string | null
+          stripe_session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_usd: number
+          artist_id: string
+          base_product_name: string
+          buyer_email: string
+          buyer_id?: string | null
+          created_at?: string
+          currency?: string
+          fulfillment_error?: string | null
+          fulfillment_status?: string
+          gelato_order_id?: string | null
+          gelato_response?: Json | null
+          id?: string
+          merchandise_item_id: string
+          payment_status?: string
+          print_file_url: string
+          quantity?: number
+          ship_address_line1?: string | null
+          ship_address_line2?: string | null
+          ship_city?: string | null
+          ship_country?: string | null
+          ship_name?: string | null
+          ship_postal_code?: string | null
+          ship_state?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_usd?: number
+          artist_id?: string
+          base_product_name?: string
+          buyer_email?: string
+          buyer_id?: string | null
+          created_at?: string
+          currency?: string
+          fulfillment_error?: string | null
+          fulfillment_status?: string
+          gelato_order_id?: string | null
+          gelato_response?: Json | null
+          id?: string
+          merchandise_item_id?: string
+          payment_status?: string
+          print_file_url?: string
+          quantity?: number
+          ship_address_line1?: string | null
+          ship_address_line2?: string | null
+          ship_city?: string | null
+          ship_country?: string | null
+          ship_name?: string | null
+          ship_postal_code?: string | null
+          ship_state?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_merchandise_item_id_fkey"
+            columns: ["merchandise_item_id"]
+            isOneToOne: false
+            referencedRelation: "merchandise_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

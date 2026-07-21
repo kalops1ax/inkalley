@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
-    meta: [{ title: "Sign in — Kiosk" }],
+    meta: [{ title: "Sign in — InkAlley" }],
   }),
   component: AuthPage,
 });
@@ -65,7 +65,7 @@ function AuthPage() {
       <div className="mx-auto flex max-w-md flex-col px-6 py-10">
         <Link to="/" className="mb-8 flex items-center gap-2 text-slate-400 hover:text-white">
           <span>←</span>
-          <span className="text-sm">Back to Kiosk</span>
+          <span className="text-sm">Back to InkAlley</span>
         </Link>
         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur">
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -155,7 +155,7 @@ function AuthPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-400">
-            {mode === "signup" ? "Already have an account?" : "New to Kiosk?"}{" "}
+            {mode === "signup" ? "Already have an account?" : "New to InkAlley?"}{" "}
             <button
               type="button"
               onClick={() => {
