@@ -75,7 +75,7 @@ function Index() {
       <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
         <Link to="/" className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-md bg-indigo-500 text-sm font-black text-white shadow-lg shadow-indigo-500/40">
-            K
+            IA
           </div>
           <span className="text-lg font-semibold tracking-tight">InkAlley</span>
           <span className="ml-2 hidden rounded-full border border-indigo-400/30 bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-widest text-indigo-300 sm:inline">
