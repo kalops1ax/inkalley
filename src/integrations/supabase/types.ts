@@ -221,6 +221,70 @@ export type Database = {
           },
         ]
       }
+      product_options: {
+        Row: {
+          created_at: string
+          id: string
+          option_name: string
+          product_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_name: string
+          product_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_name?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_options_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "merchandise_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          additional_cost_usd: number
+          created_at: string
+          id: string
+          option_id: string
+          sku: string | null
+          variant_value: string
+        }
+        Insert: {
+          additional_cost_usd?: number
+          created_at?: string
+          id?: string
+          option_id: string
+          sku?: string | null
+          variant_value: string
+        }
+        Update: {
+          additional_cost_usd?: number
+          created_at?: string
+          id?: string
+          option_id?: string
+          sku?: string | null
+          variant_value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "product_options"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

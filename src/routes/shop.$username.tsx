@@ -26,6 +26,17 @@ export const Route = createFileRoute("/shop/$username")({
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type SocialLinks = Record<string, string>;
 
+type ProductVariant = {
+  id: string;
+  variant_value: string;
+  additional_cost_usd: number;
+  sku: string | null;
+};
+type ProductOption = {
+  id: string;
+  option_name: string;
+  variants: ProductVariant[];
+};
 type Merch = {
   id: string;
   title: string;
@@ -34,6 +45,7 @@ type Merch = {
   retail_price_usd: number;
   is_active: boolean;
   artist_id: string;
+  options: ProductOption[];
 };
 
 const SOCIAL_ICONS: { key: string; label: string }[] = [
@@ -50,6 +62,7 @@ function ShopPage() {
   const [merch, setMerch] = useState<Merch[]>([]);
   const [viewerId, setViewerId] = useState<string | null>(null);
   const [checkoutMsg, setCheckoutMsg] = useState<string | null>(null);
+  const [active, setActive] = useState<Merch | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -69,7 +82,44 @@ function ShopPage() {
         .eq("artist_id", p.id)
         .eq("is_active", true)
         .order("created_at", { ascending: false });
-      setMerch(m ?? []);
+      const items = (m ?? []) as Merch[];
+      if (items.length > 0) {
+        const { data: opts } = await supabase
+          .from("product_options")
+          .select("id, product_id, option_name")
+          .in(
+            "product_id",
+            items.map((i) => i.id),
+          )
+          .order("created_at", { ascending: true });
+        const optRows = (opts ?? []) as (ProductOption & { product_id: string })[];
+        let variantRows: { id: string; option_id: string; variant_value: string; additional_cost_usd: number; sku: string | null }[] = [];
+        if (optRows.length > 0) {
+          const { data: vars } = await supabase
+            .from("product_variants")
+            .select("id, option_id, variant_value, additional_cost_usd, sku")
+            .in(
+              "option_id",
+              optRows.map((o) => o.id),
+            )
+            .order("created_at", { ascending: true });
+          variantRows = (vars ?? []) as typeof variantRows;
+        }
+        const byOption = new Map<string, ProductVariant[]>();
+        for (const v of variantRows) {
+          const arr = byOption.get(v.option_id) ?? [];
+          arr.push({ id: v.id, variant_value: v.variant_value, additional_cost_usd: Number(v.additional_cost_usd), sku: v.sku });
+          byOption.set(v.option_id, arr);
+        }
+        const optsByProduct = new Map<string, ProductOption[]>();
+        for (const o of optRows) {
+          const arr = optsByProduct.get(o.product_id) ?? [];
+          arr.push({ id: o.id, option_name: o.option_name, variants: byOption.get(o.id) ?? [] });
+          optsByProduct.set(o.product_id, arr);
+        }
+        for (const it of items) it.options = optsByProduct.get(it.id) ?? [];
+      }
+      setMerch(items);
     })();
 
     supabase.auth.getUser().then(({ data }) => setViewerId(data.user?.id ?? null));
@@ -107,11 +157,7 @@ function ShopPage() {
       navigate({ to: "/auth" });
       return;
     }
-    setCheckoutMsg(
-      `Checkout for "${item.title}" ($${Number(item.retail_price_usd).toFixed(
-        2,
-      )}) — Stripe secure checkout is being activated. This shop is fully browseable; purchasing goes live the moment payments are connected.`,
-    );
+    setActive(item);
   }
 
   return (
@@ -305,6 +351,131 @@ function ShopPage() {
       {checkoutMsg && (
         <CheckoutModal message={checkoutMsg} onClose={() => setCheckoutMsg(null)} />
       )}
+      {active && (
+        <ProductModal
+          item={active}
+          onClose={() => setActive(null)}
+          onConfirm={(total, summary) => {
+            setCheckoutMsg(
+              `Checkout for "${active.title}" — ${summary} — total ${total.toFixed(
+                2,
+              )}. Stripe secure checkout is being activated. This shop is fully browseable; purchasing goes live the moment payments are connected.`,
+            );
+            setActive(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ProductModal({
+  item,
+  onClose,
+  onConfirm,
+}: {
+  item: Merch;
+  onClose: () => void;
+  onConfirm: (total: number, summary: string) => void;
+}) {
+  const base = Number(item.retail_price_usd);
+  const [selected, setSelected] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    for (const opt of item.options) {
+      if (opt.variants.length > 0) init[opt.id] = opt.variants[0].id;
+    }
+    setSelected(init);
+  }, [item]);
+
+  const additional = item.options.reduce((sum, opt) => {
+    const vId = selected[opt.id];
+    const v = opt.variants.find((x) => x.id === vId);
+    return sum + (v ? Number(v.additional_cost_usd) : 0);
+  }, 0);
+  const total = base + additional;
+
+  const summary = item.options
+    .map((opt) => {
+      const v = opt.variants.find((x) => x.id === selected[opt.id]);
+      return v ? `${opt.option_name}: ${v.variant_value}` : null;
+    })
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="aspect-[16/10] overflow-hidden bg-slate-950">
+          <img src={item.design_url} alt={item.title} className="h-full w-full object-cover" />
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto p-6">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-xl font-semibold text-white">{item.title}</h3>
+            <button
+              onClick={onClose}
+              className="shrink-0 rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-400 transition hover:border-slate-500 hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+          {item.description && (
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.description}</p>
+          )}
+
+          {item.options.map((opt) => (
+            <div key={opt.id} className="mt-5">
+              <div className="mb-2 text-xs font-medium uppercase tracking-widest text-slate-500">
+                {opt.option_name}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {opt.variants.map((v) => {
+                  const isSel = selected[opt.id] === v.id;
+                  return (
+                    <button
+                      key={v.id}
+                      onClick={() => setSelected((p) => ({ ...p, [opt.id]: v.id }))}
+                      className={
+                        "rounded-full border px-4 py-2 text-sm transition " +
+                        (isSel
+                          ? "border-indigo-400 bg-indigo-500/15 text-white shadow-sm shadow-indigo-500/20"
+                          : "border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-500 hover:text-white")
+                      }
+                    >
+                      {v.variant_value}
+                      {Number(v.additional_cost_usd) > 0 && (
+                        <span className={isSel ? "ml-1.5 text-indigo-300" : "ml-1.5 text-slate-500"}>
+                          +${Number(v.additional_cost_usd).toFixed(2)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <div className="mt-6 flex items-center justify-between border-t border-slate-800 pt-5">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-slate-500">Total</div>
+              <div className="text-2xl font-bold text-white">${total.toFixed(2)}</div>
+            </div>
+            <button
+              onClick={() => onConfirm(total, summary)}
+              className="rounded-md bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-400"
+            >
+              Checkout ${total.toFixed(2)}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

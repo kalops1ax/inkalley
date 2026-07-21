@@ -1,12 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, KeyRound, Loader2, LogOut, Pencil, Plus, X } from "lucide-react";
+import { Check, KeyRound, Loader2, LogOut, Pencil, Plus, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type BaseProduct = Database["public"]["Tables"]["base_products"]["Row"];
 type MerchItem = Database["public"]["Tables"]["merchandise_items"]["Row"];
+
+type DraftVariant = {
+  id: string;
+  variant_value: string;
+  additional_cost_usd: string;
+  sku: string;
+};
+type DraftOption = {
+  id: string;
+  option_name: string;
+  variants: DraftVariant[];
+};
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — InkAlley" }] }),
@@ -275,6 +287,56 @@ function ArtistDashboard({
   const [msg, setMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
+  const [options, setOptions] = useState<DraftOption[]>([]);
+
+  const uid = () => Math.random().toString(36).slice(2, 10);
+
+  function addOption() {
+    setOptions((prev) => [
+      ...prev,
+      { id: uid(), option_name: "", variants: [
+        { id: uid(), variant_value: "", additional_cost_usd: "0", sku: "" },
+      ] },
+    ]);
+  }
+  function updateOptionName(optId: string, name: string) {
+    setOptions((prev) =>
+      prev.map((o) => (o.id === optId ? { ...o, option_name: name } : o)),
+    );
+  }
+  function removeOption(optId: string) {
+    setOptions((prev) => prev.filter((o) => o.id !== optId));
+  }
+  function addVariant(optId: string) {
+    setOptions((prev) =>
+      prev.map((o) =>
+        o.id === optId
+          ? { ...o, variants: [...o.variants, { id: uid(), variant_value: "", additional_cost_usd: "0", sku: "" }] }
+          : o,
+      ),
+    );
+  }
+  function updateVariant(optId: string, varId: string, field: keyof DraftVariant, value: string) {
+    setOptions((prev) =>
+      prev.map((o) =>
+        o.id === optId
+          ? { ...o, variants: o.variants.map((v) => (v.id === varId ? { ...v, [field]: value } : v)) }
+          : o,
+      ),
+    );
+  }
+  function removeVariant(optId: string, varId: string) {
+    setOptions((prev) =>
+      prev.map((o) =>
+        o.id === optId
+          ? { ...o, variants: o.variants.filter((v) => v.id !== varId) }
+          : o,
+      ),
+    );
+  }
+  function resetForm() {
+    setOptions([]);
+  }
 
   useEffect(() => {
     supabase.from("base_products").select("*").order("id").then(({ data }) => {
@@ -319,11 +381,41 @@ function ArtistDashboard({
         .select()
         .single();
       if (error) throw error;
+
+      // Persist curated options + variants (artist curation).
+      for (const opt of options) {
+        const name = opt.option_name.trim();
+        if (!name || opt.variants.length === 0) continue;
+        const { data: optRow, error: optErr } = await supabase
+          .from("product_options")
+          .insert({ product_id: data.id, option_name: name })
+          .select()
+          .single();
+        if (optErr) throw optErr;
+        const variantRows = opt.variants
+          .map((v) => ({
+            option_id: optRow.id,
+            variant_value: v.variant_value.trim(),
+            additional_cost_usd: Number(v.additional_cost_usd) || 0,
+            sku: v.sku.trim() || null,
+          }))
+          .filter((v) => v.variant_value);
+        if (variantRows.length === 0) {
+          await supabase.from("product_options").delete().eq("id", optRow.id);
+          continue;
+        }
+        const { error: varErr } = await supabase
+          .from("product_variants")
+          .insert(variantRows);
+        if (varErr) throw varErr;
+      }
+
       setItems((prev) => [data, ...prev]);
       setTitle("");
       setDescription("");
       setDesignUrl("");
       setMarkup("5.00");
+      resetForm();
       setMsg("Merch published — it's live in your shop.");
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Failed to create");
@@ -444,6 +536,107 @@ function ArtistDashboard({
                   className={inputCls}
                 />
               </label>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Curated options</h3>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Add option groups (e.g. Finish Type) with variants buyers can pick. Optional additional cost adds to the retail price.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addOption}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-indigo-500/50 bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 transition hover:border-indigo-400 hover:text-indigo-200"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add option
+                </button>
+              </div>
+
+              {options.length === 0 ? (
+                <div className="mt-3 rounded-lg border border-dashed border-slate-800 p-4 text-center text-xs text-slate-600">
+                  No options yet — buyers will purchase the base item as-is.
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {options.map((opt) => (
+                    <div key={opt.id} className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={opt.option_name}
+                          onChange={(e) => updateOptionName(opt.id, e.target.value)}
+                          className={inputCls}
+                          placeholder="Option name (e.g. Finish Type, Base Size)"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeOption(opt.id)}
+                          className="shrink-0 rounded-md border border-slate-700 p-2 text-slate-400 transition hover:border-rose-500/60 hover:text-rose-300"
+                          title="Remove option"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <div className="mt-3 space-y-2">
+                        {opt.variants.map((v) => (
+                          <div key={v.id} className="grid grid-cols-12 gap-2">
+                            <input
+                              type="text"
+                              value={v.variant_value}
+                              onChange={(e) => updateVariant(opt.id, v.id, "variant_value", e.target.value)}
+                              className={inputCls + " col-span-12 sm:col-span-5"}
+                              placeholder="Variant (e.g. Holographic)"
+                            />
+                            <div className="col-span-6 sm:col-span-3">
+                              <div className="relative">
+                                <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-500">$</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="0.50"
+                                  value={v.additional_cost_usd}
+                                  onChange={(e) => updateVariant(opt.id, v.id, "additional_cost_usd", e.target.value)}
+                                  className={inputCls + " pl-6"}
+                                  placeholder="0.00"
+                                />
+                              </div>
+                            </div>
+                            <input
+                              type="text"
+                              value={v.sku}
+                              onChange={(e) => updateVariant(opt.id, v.id, "sku", e.target.value)}
+                              className={inputCls + " col-span-5 sm:col-span-3"}
+                              placeholder="SKU (opt)"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeVariant(opt.id, v.id)}
+                              className="col-span-1 flex items-center justify-center rounded-md border border-slate-700 text-slate-400 transition hover:border-rose-500/60 hover:text-rose-300"
+                              title="Remove variant"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => addVariant(opt.id)}
+                        className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-indigo-300 transition hover:text-indigo-200"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add variant
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-5 text-center">
