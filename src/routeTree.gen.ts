@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopUsernameRouteImport } from './routes/shop.$username'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminDashboardRouteImport } from './routes/_authenticated/admin-dashboard'
 
@@ -27,6 +28,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopUsernameRoute = ShopUsernameRouteImport.update({
+  id: '/shop/$username',
+  path: '/shop/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -46,12 +52,14 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin-dashboard': typeof AuthenticatedAdminDashboardRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/shop/$username': typeof ShopUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin-dashboard': typeof AuthenticatedAdminDashboardRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/shop/$username': typeof ShopUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -60,12 +68,18 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin-dashboard': typeof AuthenticatedAdminDashboardRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/shop/$username': typeof ShopUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/admin-dashboard' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/admin-dashboard'
+    | '/dashboard'
+    | '/shop/$username'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin-dashboard' | '/dashboard'
+  to: '/' | '/auth' | '/admin-dashboard' | '/dashboard' | '/shop/$username'
   id:
     | '__root__'
     | '/'
@@ -73,12 +87,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin-dashboard'
     | '/_authenticated/dashboard'
+    | '/shop/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ShopUsernameRoute: typeof ShopUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -102,6 +118,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/$username': {
+      id: '/shop/$username'
+      path: '/shop/$username'
+      fullPath: '/shop/$username'
+      preLoaderRoute: typeof ShopUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/dashboard': {
@@ -138,6 +161,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ShopUsernameRoute: ShopUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
